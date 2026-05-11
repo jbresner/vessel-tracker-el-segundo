@@ -409,6 +409,14 @@ window.addEventListener('load', () => {
   handle.addEventListener('mousedown',  onStart);
   window.addEventListener('mousemove',  onMove);
   window.addEventListener('mouseup',    onEnd);
+
+  // Tap (without drag) cycles peek → half → full → peek
+  handle.addEventListener('click', () => {
+    const h = sheet.offsetHeight;
+    if      (h <= SNAP_PEEK + 10) snapSheet(SNAP_HALF);
+    else if (h <= SNAP_HALF + 10) snapSheet(SNAP_FULL);
+    else                          snapSheet(SNAP_PEEK);
+  });
 });
 
 function showMobileList() {

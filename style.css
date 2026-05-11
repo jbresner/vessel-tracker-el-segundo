@@ -108,25 +108,15 @@ header {
   margin-bottom: 8px;
 }
 
-.api-input-row {
+.controls-row {
   display: flex;
   gap: 6px;
+  margin-bottom: 8px;
 }
 
-input[type="text"],
-input[type="password"] {
+.controls-row button {
   flex: 1;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
-  padding: 7px 10px;
-  border-radius: 3px;
-  outline: none;
-  transition: border-color 0.2s;
 }
-input:focus { border-color: var(--accent); }
 
 button {
   background: var(--accent);

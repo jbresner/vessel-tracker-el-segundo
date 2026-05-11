@@ -32,10 +32,9 @@
     <!-- LEFT SIDEBAR -->
     <div class="sidebar">
       <div class="api-section">
-        <div class="section-label">AISStream API Key</div>
-        <div class="api-input-row">
-          <input type="password" id="apiKeyInput" placeholder="Paste your key here…" />
+        <div class="controls-row">
           <button id="connectBtn" onclick="toggleConnection()">CONNECT</button>
+          <button class="secondary" onclick="reconnect()">↺ RESET</button>
         </div>
         <div class="radius-row">
           <label>RADIUS</label>
@@ -50,7 +49,7 @@
       </div>
 
       <div class="vessel-list" id="vesselList">
-        <div class="no-vessels">Enter your API key<br>and connect to begin<br>tracking vessels</div>
+        <div class="no-vessels">Connecting…</div>
       </div>
     </div>
 

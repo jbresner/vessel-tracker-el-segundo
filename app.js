@@ -1,5 +1,15 @@
 // ── Constants ──────────────────────────────────────────────────────────────
-const TARGET = { lat: 33.9165, lng: -118.4320 };
+// Berth positions calculated from official records:
+// Berth 3 ≈ 7,200ft (1.19nm) offshore; Berth 4 ≈ 8,100ft (1.34nm) offshore
+// Projected due west from the El Segundo shoreline (~33.9165°N, 118.4175°W)
+const BERTH3 = { lat: 33.9165, lng: -118.4540, name: "Chevron Berth 3 (CBM)" };
+const BERTH4 = { lat: 33.9165, lng: -118.4620, name: "Chevron Berth 4 (CBM)" };
+
+// Center point between the two berths — used for radius circle and bounding box
+const TARGET = {
+  lat: (BERTH3.lat + BERTH4.lat) / 2,
+  lng: (BERTH3.lng + BERTH4.lng) / 2,
+};
 const TARGET_NAME = "Chevron El Segundo Terminal";
 
 // ── AIS Helpers ────────────────────────────────────────────────────────────
@@ -64,14 +74,27 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   maxZoom: 19,
 }).addTo(map);
 
-// Terminal marker
-const terminalIcon = L.divIcon({
-  html: `<div style="width:14px;height:14px;background:#ff6b2b;border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px #ff6b2b88"></div>`,
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-});
-L.marker([TARGET.lat, TARGET.lng], { icon: terminalIcon })
-  .bindPopup(`<b>${TARGET_NAME}</b>`)
+// Berth markers
+function makeBerthIcon(label) {
+  return L.divIcon({
+    html: `<div style="
+      background:#ff6b2b;border:2px solid #fff;border-radius:3px;
+      box-shadow:0 0 10px #ff6b2b88;
+      font-family:'Share Tech Mono',monospace;font-size:9px;
+      color:#fff;padding:2px 5px;white-space:nowrap;
+    ">${label}</div>`,
+    iconSize: [60, 20],
+    iconAnchor: [30, 10],
+    className: '',
+  });
+}
+
+L.marker([BERTH3.lat, BERTH3.lng], { icon: makeBerthIcon('BERTH 3') })
+  .bindPopup(`<b>${BERTH3.name}</b><br>Crude oil & light products<br>~7,200ft offshore`)
+  .addTo(map);
+
+L.marker([BERTH4.lat, BERTH4.lng], { icon: makeBerthIcon('BERTH 4') })
+  .bindPopup(`<b>${BERTH4.name}</b><br>Crude oil<br>~8,100ft offshore`)
   .addTo(map);
 
 // ── Radius Circle ──────────────────────────────────────────────────────────
@@ -110,6 +133,9 @@ function getBBox() {
   ];
 }
 
+// ── API Key — paste yours here ─────────────────────────────────────────────
+const API_KEY = '10080153f843a89b71fe420464f47ba9d5b123e1';
+
 // ── Application State ──────────────────────────────────────────────────────
 let ws           = null;      // active WebSocket
 let vessels      = {};        // mmsi → vessel data object
@@ -132,8 +158,11 @@ function reconnect() {
 }
 
 function connect() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) { alert('Please enter your AISStream API key.'); return; }
+  const key = API_KEY;
+  if (!key || key === 'YOUR_API_KEY_HERE') {
+    alert('Please set your API key in app.js (API_KEY constant near the top).');
+    return;
+  }
 
   setStatus('connecting');
   const bbox = getBBox();
@@ -451,6 +480,9 @@ function updateClock() {
 }
 updateClock();
 setInterval(updateClock, 1000);
+
+// ── Auto-connect on page load ──────────────────────────────────────────────
+window.addEventListener('load', () => connect());
 
 // ── Stale Vessel Cleanup ───────────────────────────────────────────────────
 // Remove vessels not seen in the last 10 minutes

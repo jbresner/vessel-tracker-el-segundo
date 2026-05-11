@@ -36,6 +36,8 @@ header {
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  position: relative;
+  z-index: 2000;
 }
 
 .main {
@@ -339,15 +341,19 @@ input[type="range"] {
 
 /* ── Mobile Styles ─────────────────────────────────────────────────────── */
 
-/* Hide clock on mobile */
 @media (max-width: 768px) {
+  header {
+    padding: 8px 12px;
+  }
   .hide-mobile { display: none; }
+  .logo { font-size: 11px; letter-spacing: 1px; }
+  .status-bar { font-size: 10px; gap: 10px; }
 }
 
 /* Mobile floating controls — hidden by default, shown on mobile via media query */
 .mobile-controls {
   position: fixed;
-  top: 64px;
+  top: 58px;
   left: 10px;
   z-index: 1200;
   align-items: center;
@@ -402,7 +408,7 @@ input[type="range"] {
   }
   #map {
     position: fixed;
-    top: 54px;
+    top: 48px;
     left: 0;
     right: 0;
     bottom: 0;

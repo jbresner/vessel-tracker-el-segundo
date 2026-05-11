@@ -250,6 +250,10 @@ input[type="range"] {
 .vessel-icon { cursor: pointer; z-index: 1000 !important; }
 .berth-icon  { z-index: 500 !important; }
 
+@media (max-width: 768px) {
+  .leaflet-control-zoom { display: none; }
+}
+
 /* ── Right Detail Panel ────────────────────────────────────────────────── */
 .detail-panel {
   width: 260px;
@@ -343,7 +347,7 @@ input[type="range"] {
 /* Mobile floating controls — hidden by default, shown on mobile via media query */
 .mobile-controls {
   position: fixed;
-  top: 58px;
+  top: 64px;
   left: 10px;
   z-index: 1200;
   align-items: center;
@@ -398,7 +402,7 @@ input[type="range"] {
   }
   #map {
     position: fixed;
-    top: 44px;
+    top: 54px;
     left: 0;
     right: 0;
     bottom: 0;

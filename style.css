@@ -391,40 +391,60 @@ input[type="range"] {
   accent-color: var(--accent);
 }
 
-/* Hide mobile controls on desktop */
+/* ── Desktop: hide mobile elements ────────────────────────────────────── */
 @media (min-width: 769px) {
   .mobile-controls { display: none !important; }
   .sheet           { display: none !important; }
 }
 
-/* Show mobile controls only on mobile */
+/* ── Mobile layout ─────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Hide desktop panels */
   .sidebar      { display: none !important; }
   .detail-panel { display: none !important; }
 
-  /* Map fills everything below header */
-  .main {
+  /* Body is a flex column — header sits on top, .main fills the rest */
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  header {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    z-index: 2000;
     position: relative;
   }
-  #map {
-    position: fixed;
-    top: 48px;
-    left: 0;
-    right: 0;
-    bottom: 0;
+
+  .main {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
   }
 
-  /* Show floating controls */
+  /* Map fills .main completely */
+  #map {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Floating controls — inside .main, top */
   .mobile-controls {
     display: flex !important;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 1200;
   }
 
-  /* ── Slide-up Sheet ──────────────────────────────────────────────────── */
+  /* Slide-up sheet — inside .main, bottom */
   .sheet {
     display: flex !important;
     flex-direction: column;
-    position: fixed;
+    position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
@@ -437,12 +457,7 @@ input[type="range"] {
     overflow: hidden;
     touch-action: none;
   }
-  .sheet.dragging {
-    transition: none;
-  }
-  .sheet.peek     { height: 52px; }
-  .sheet.half     { height: 50vh; }
-  .sheet.full     { height: 88vh; }
+  .sheet.dragging { transition: none; }
 
   .sheet-handle {
     width: 100%;
@@ -454,7 +469,6 @@ input[type="range"] {
     cursor: grab;
     touch-action: none;
   }
-
   .sheet-handle::after {
     content: '';
     width: 40px;

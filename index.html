@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>El Segundo Terminal — Vessel Tracker</title>
 
   <!-- Leaflet -->
@@ -18,19 +18,21 @@
 </head>
 <body>
 
+  <!-- HEADER -->
   <header>
     <div class="logo">EL SEGUNDO <span>//</span> VESSEL TRACKER</div>
     <div class="status-bar">
       <span><span class="status-dot" id="statusDot"></span><span id="statusText">DISCONNECTED</span></span>
       <span id="vesselCount">0 VESSELS</span>
-      <span id="clockEl"></span>
-      <span style="color:var(--other)">v1.6</span>
+      <span id="clockEl" class="hide-mobile"></span>
+      <span style="color:var(--other)">v1.8</span>
     </div>
   </header>
 
+  <!-- DESKTOP: three-column layout / MOBILE: map + overlays -->
   <div class="main">
 
-    <!-- LEFT SIDEBAR -->
+    <!-- LEFT SIDEBAR (desktop only) -->
     <div class="sidebar">
       <div class="api-section">
         <div class="controls-row">
@@ -57,8 +59,8 @@
     <!-- MAP -->
     <div id="map"></div>
 
-    <!-- RIGHT DETAIL PANEL -->
-    <div class="detail-panel">
+    <!-- RIGHT DETAIL PANEL (desktop only) -->
+    <div class="detail-panel" id="detailPanel">
       <div class="detail-header">VESSEL DETAIL</div>
       <div class="detail-body" id="detailBody">
         <div class="detail-empty">Select a vessel<br>to view details</div>
@@ -71,7 +73,48 @@
 
   </div>
 
-  <!-- App logic -->
+  <!-- MOBILE FLOATING CONTROLS -->
+  <div class="mobile-controls">
+    <button class="mobile-btn" onclick="toggleConnection()" id="mobileConnectBtn">CONNECT</button>
+    <button class="mobile-btn secondary" onclick="reconnect()">↺</button>
+    <div class="mobile-radius">
+      <input type="range" id="mobileRadiusSlider" min="1" max="20" value="5"
+        oninput="updateRadius(this.value); document.getElementById('radiusSlider').value=this.value; document.getElementById('radiusVal').textContent=this.value+' nm';"/>
+      <span class="radius-val" id="mobileRadiusVal">5 nm</span>
+    </div>
+  </div>
+
+  <!-- MOBILE SLIDE-UP SHEET -->
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle" id="sheetHandle"></div>
+
+    <!-- Vessel list view -->
+    <div class="sheet-view" id="sheetListView">
+      <div class="sheet-header">
+        <span class="sheet-title">VESSELS IN RANGE</span>
+        <span id="sheetListCount">0</span>
+      </div>
+      <div class="vessel-list" id="mobileVesselList">
+        <div class="no-vessels">Connecting…</div>
+      </div>
+      <div class="sheet-log">
+        <div class="section-label" style="padding:4px 0 6px">ACTIVITY LOG</div>
+        <div id="mobileLogEntries"></div>
+      </div>
+    </div>
+
+    <!-- Vessel detail view -->
+    <div class="sheet-view" id="sheetDetailView" style="display:none">
+      <div class="sheet-header">
+        <button class="back-btn" onclick="showMobileList()">← BACK</button>
+        <span class="sheet-title">VESSEL DETAIL</span>
+      </div>
+      <div class="detail-body" id="mobileDetailBody">
+        <div class="detail-empty">Select a vessel to view details</div>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 
 </body>

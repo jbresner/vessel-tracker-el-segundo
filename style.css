@@ -247,7 +247,8 @@ input[type="range"] {
   font-size: 11px !important;
 }
 .leaflet-popup-tip { background: var(--panel) !important; }
-.vessel-icon { cursor: pointer; }
+.vessel-icon { cursor: pointer; z-index: 1000 !important; }
+.berth-icon  { z-index: 500 !important; }
 
 /* ── Right Detail Panel ────────────────────────────────────────────────── */
 .detail-panel {
@@ -331,3 +332,156 @@ input[type="range"] {
 }
 .log-entry .log-time  { color: var(--accent); margin-right: 6px; }
 .log-entry.highlight  { color: var(--tanker); }
+
+/* ── Mobile Styles ─────────────────────────────────────────────────────── */
+
+/* Hide clock on mobile */
+@media (max-width: 768px) {
+  .hide-mobile { display: none; }
+}
+
+/* Mobile floating controls (top-left over map) */
+.mobile-controls {
+  display: none;
+  position: fixed;
+  top: 58px;
+  left: 10px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15,21,32,0.92);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.mobile-btn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+.mobile-btn.secondary { background: var(--border); color: var(--text); }
+.mobile-btn.stop      { background: #ff4444; }
+
+.mobile-radius {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mobile-radius input[type="range"] {
+  width: 80px;
+  accent-color: var(--accent);
+}
+
+/* Hide mobile controls on desktop */
+@media (min-width: 769px) {
+  .mobile-controls { display: none !important; }
+  .sheet           { display: none !important; }
+}
+
+/* Show mobile controls only on mobile */
+@media (max-width: 768px) {
+  /* Hide desktop panels */
+  .sidebar      { display: none !important; }
+  .detail-panel { display: none !important; }
+
+  /* Map fills everything below header */
+  .main {
+    position: relative;
+  }
+  #map {
+    position: fixed;
+    top: 44px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  /* Show floating controls */
+  .mobile-controls {
+    display: flex !important;
+  }
+
+  /* ── Slide-up Sheet ──────────────────────────────────────────────────── */
+  .sheet {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px; /* peek height */
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    z-index: 1100;
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  .sheet.expanded {
+    height: 55vh;
+  }
+
+  .sheet.full {
+    height: 85vh;
+  }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 10px auto 6px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .sheet-view {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 16px 10px;
+    flex-shrink: 0;
+  }
+
+  .sheet-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--other);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .sheet-log {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .back-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    letter-spacing: 1px;
+  }
+}

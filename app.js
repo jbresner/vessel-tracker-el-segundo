@@ -482,11 +482,10 @@ function updateList() {
   const list = document.getElementById('vesselList');
   list.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, false)).join('');
 
-  // Mobile list
+  // Mobile list — update silently, never force open
   const mobileList = document.getElementById('mobileVesselList');
   if (mobileList) {
     mobileList.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, true)).join('');
-    if (count > 0) expandSheet();
   }
 }
 

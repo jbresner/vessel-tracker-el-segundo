@@ -67,8 +67,7 @@ function navStatusLabel(s) {
 // ── Map Setup ──────────────────────────────────────────────────────────────
 // ── Map Setup ──────────────────────────────────────────────────────────────
 const isMobile = () => window.innerWidth <= 768;
-const mapId    = isMobile() ? 'mobileMap' : 'map';
-const map      = L.map(mapId, { zoomControl: true }).setView([TARGET.lat, TARGET.lng], 13);
+const map = L.map('map', { zoomControl: true }).setView([TARGET.lat, TARGET.lng], 13);
 
 // Primary: CARTO dark tiles
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {

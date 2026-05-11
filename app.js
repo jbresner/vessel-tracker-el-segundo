@@ -666,7 +666,14 @@ updateClock();
 setInterval(updateClock, 1000);
 
 // ── Auto-connect on page load ──────────────────────────────────────────────
-window.addEventListener('load', () => connect());
+window.addEventListener('load', () => {
+  const header   = document.querySelector('header');
+  const controls = document.querySelector('.mobile-controls');
+  if (header && controls) {
+    controls.style.top = header.offsetHeight + 'px';
+  }
+  connect();
+});
 
 // ── Stale Vessel Cleanup ───────────────────────────────────────────────────
 // Remove vessels not seen in the last 30 minutes (moored ships ping infrequently)

@@ -65,11 +65,9 @@ function navStatusLabel(s) {
 }
 
 // ── Map Setup ──────────────────────────────────────────────────────────────
-// ── Map Setup ──────────────────────────────────────────────────────────────
-const isMobile = () => window.innerWidth <= 768;
 const map = L.map('map', { zoomControl: true }).setView([TARGET.lat, TARGET.lng], 13);
 
-// Primary: CARTO dark tiles
+// Primary: CARTO dark tiles; fallback keeps working if CARTO is slow
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
@@ -121,10 +119,7 @@ drawRadius();
 
 function updateRadius(val) {
   radiusNm = parseInt(val);
-  const label = `${radiusNm} nm`;
-  document.getElementById('radiusVal').textContent  = label;
-  const mRV = document.getElementById('mRadiusVal');
-  if (mRV) mRV.textContent = label;
+  document.getElementById('radiusVal').textContent = `${radiusNm} nm`;
   drawRadius();
   if (ws && ws.readyState === WebSocket.OPEN) reconnect();
 }
@@ -217,9 +212,11 @@ function connect() {
   ws.onclose = () => {
     if (document.getElementById('statusText').textContent === 'LIVE') {
       setStatus('disconnected');
-    } else {
-      setStatus('disconnected');
     }
+    document.getElementById('connectBtn').textContent = 'CONNECT';
+    document.getElementById('connectBtn').classList.remove('stop');
+    const mobileBtn = document.getElementById('mobileConnectBtn');
+    if (mobileBtn) { mobileBtn.textContent = 'CONNECT'; mobileBtn.classList.remove('stop'); }
   };
 }
 
@@ -346,50 +343,51 @@ function updateMarker(mmsi) {
 // ── Mobile Sheet ───────────────────────────────────────────────────────────
 const isMobile = () => window.innerWidth <= 768;
 
-function toggleSheet() {
-  const sheet = document.getElementById('mSheet');
-  if (!sheet) return;
-  if (sheet.classList.contains('full')) {
-    sheet.classList.remove('full');
-  } else if (sheet.classList.contains('open')) {
-    sheet.classList.add('full');
-  } else {
-    sheet.classList.add('open');
+function expandSheet() {
+  const sheet = document.getElementById('sheet');
+  if (!sheet.classList.contains('expanded') && !sheet.classList.contains('full')) {
+    sheet.classList.add('expanded');
   }
 }
 
-function openSheet() {
-  const sheet = document.getElementById('mSheet');
-  if (sheet && !sheet.classList.contains('open')) sheet.classList.add('open');
-}
-
 function showMobileList() {
-  const lv = document.getElementById('mListView');
-  const dv = document.getElementById('mDetailView');
-  if (lv) lv.style.display = 'flex';
-  if (dv) dv.style.display = 'none';
+  document.getElementById('sheetListView').style.display = 'flex';
+  document.getElementById('sheetDetailView').style.display = 'none';
 }
 
 function showMobileDetail() {
-  const lv = document.getElementById('mListView');
-  const dv = document.getElementById('mDetailView');
-  if (lv) lv.style.display = 'none';
-  if (dv) dv.style.display = 'flex';
-  openSheet();
+  document.getElementById('sheetListView').style.display = 'none';
+  document.getElementById('sheetDetailView').style.display = 'flex';
+  expandSheet();
 }
 
-function vesselItemHTML(v, onClickFn) {
+// Sheet handle tap cycles: peek → expanded → full → peek
+document.getElementById('sheetHandle').addEventListener('click', () => {
+  const sheet = document.getElementById('sheet');
+  if (sheet.classList.contains('full')) {
+    sheet.classList.remove('full');
+    sheet.classList.remove('expanded');
+  } else if (sheet.classList.contains('expanded')) {
+    sheet.classList.add('full');
+  } else {
+    sheet.classList.add('expanded');
+  }
+});
+
+function vesselItemHTML(v, isMobileList) {
   const cat   = v.category || 'other';
   const badge = cat === 'tanker' ? 'badge-tanker' : cat === 'cargo' ? 'badge-cargo' : 'badge-other';
   const label = shipTypeLabel(v.shipType || 0);
   const sog   = v.sog != null ? `${v.sog.toFixed(1)}kn` : '—';
   const sel   = v.mmsi === selectedMmsi ? ' selected' : '';
-  const dest  = v.destination ? `<span title="${v.destination}">${v.destination.substring(0,10)}</span>` : '';
-  return `<div class="vessel-item ${cat}${sel}" onclick="${onClickFn}('${v.mmsi}')">
+  const dest  = v.destination ? `<span title="${v.destination}">${v.destination.substring(0, 10)}</span>` : '';
+  const fn    = isMobileList ? `selectVesselMobile('${v.mmsi}')` : `selectVessel('${v.mmsi}')`;
+  return `<div class="vessel-item ${cat}${sel}" onclick="${fn}">
     <div class="vessel-name">${v.name}</div>
     <div class="vessel-meta">
       <span class="vessel-type-badge ${badge}">${label}</span>
-      <span>${sog}</span>${dest}
+      <span>${sog}</span>
+      ${dest}
     </div>
   </div>`;
 }
@@ -397,12 +395,14 @@ function vesselItemHTML(v, onClickFn) {
 function selectVesselMobile(mmsi) {
   selectedMmsi = mmsi;
   updateList();
-  showDetail(mmsi);
-  const mBody = document.getElementById('mDetailBody');
-  const dBody = document.getElementById('detailBody');
-  if (mBody && dBody) mBody.innerHTML = dBody.innerHTML;
   showMobileDetail();
   const v = vessels[mmsi];
+  const mobileBody = document.getElementById('mobileDetailBody');
+  if (v) {
+    const desktopBody = document.getElementById('detailBody');
+    showDetail(mmsi); // populates desktopBody
+    mobileBody.innerHTML = desktopBody.innerHTML;
+  }
   if (v && v.lat) map.panTo([v.lat, v.lng]);
 }
 
@@ -410,25 +410,27 @@ function selectVesselMobile(mmsi) {
 function updateList() {
   const arr = Object.values(vessels)
     .filter(v => v.lat)
-    .sort((a,b) => {
-      const order = ['tanker','cargo','passenger','fishing','tug','other'];
-      return order.indexOf(a.category||'other') - order.indexOf(b.category||'other');
+    .sort((a, b) => {
+      const order = ['tanker', 'cargo', 'passenger', 'fishing', 'tug', 'other'];
+      return order.indexOf(a.category || 'other') - order.indexOf(b.category || 'other');
     });
 
-  const count     = arr.length;
-  const countText = `${count} VESSEL${count !== 1 ? 'S' : ''}`;
+  const count = arr.length;
+  document.getElementById('listCount').textContent      = count;
+  document.getElementById('sheetListCount').textContent = count;
+  document.getElementById('vesselCount').textContent    = `${count} VESSEL${count !== 1 ? 'S' : ''}`;
+
   const emptyHTML = '<div class="no-vessels">Listening for vessels…<br>May take a moment<br>for traffic to appear</div>';
 
-  ['listCount','mListCount'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = count; });
-  ['vesselCount','mVesselCount'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = countText; });
+  // Desktop list
+  const list = document.getElementById('vesselList');
+  list.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, false)).join('');
 
-  const dList = document.getElementById('vesselList');
-  if (dList) dList.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, 'selectVessel')).join('');
-
-  const mList = document.getElementById('mVesselList');
-  if (mList) {
-    mList.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, 'selectVesselMobile')).join('');
-    if (count > 0 && isMobile()) openSheet();
+  // Mobile list
+  const mobileList = document.getElementById('mobileVesselList');
+  if (mobileList) {
+    mobileList.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, true)).join('');
+    if (count > 0) expandSheet();
   }
 }
 
@@ -513,45 +515,45 @@ function showDetail(mmsi) {
 
 // ── Activity Log ───────────────────────────────────────────────────────────
 function addLog(msg, highlight) {
-  const time = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
+  const time = new Date().toLocaleTimeString('en-US', {
+    hour:   '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
   logEntries.unshift({ time, msg, highlight });
   if (logEntries.length > 50) logEntries.pop();
-  const html = logEntries.map(e =>
-    `<div class="log-entry${e.highlight?' highlight':''}"><span class="log-time">${e.time}</span>${e.msg}</div>`
-  ).join('');
-  ['logEntries','mLogEntries'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
+
+  const html = logEntries
+    .map(e => `<div class="log-entry${e.highlight ? ' highlight' : ''}">
+      <span class="log-time">${e.time}</span>${e.msg}
+    </div>`)
+    .join('');
+
+  document.getElementById('logEntries').innerHTML = html;
+  const mobileLog = document.getElementById('mobileLogEntries');
+  if (mobileLog) mobileLog.innerHTML = html;
 }
 
 // ── Status Indicator ───────────────────────────────────────────────────────
 function setStatus(state) {
-  const dot  = document.getElementById('statusDot');
-  const txt  = document.getElementById('statusText');
-  const mDot = document.getElementById('mStatusDot');
-  const mTxt = document.getElementById('mStatusText');
-  const mBtn = document.getElementById('mConnectBtn');
-  const dBtn = document.getElementById('connectBtn');
-
-  if (dot) dot.className = 'status-dot';
-  if (mDot) mDot.className = 'status-dot';
+  const dot      = document.getElementById('statusDot');
+  const txt      = document.getElementById('statusText');
+  const mobileBtn = document.getElementById('mobileConnectBtn');
+  dot.className  = 'status-dot';
 
   if (state === 'live') {
-    [dot, mDot].forEach(d => d && d.classList.add('live'));
-    if (txt) txt.textContent = 'LIVE';
-    if (mTxt) mTxt.textContent = 'LIVE';
-    if (dBtn) { dBtn.textContent = 'STOP'; dBtn.classList.add('stop'); }
-    if (mBtn) { mBtn.textContent = 'STOP'; mBtn.classList.add('stop'); }
+    dot.classList.add('live');
+    txt.textContent = 'LIVE';
+    if (mobileBtn) { mobileBtn.textContent = 'STOP'; mobileBtn.classList.add('stop'); }
   } else if (state === 'connecting') {
-    if (txt) txt.textContent = 'CONNECTING…';
-    if (mTxt) mTxt.textContent = 'CONNECTING…';
+    txt.textContent = 'CONNECTING…';
   } else if (state === 'error') {
-    [dot, mDot].forEach(d => d && d.classList.add('error'));
-    if (txt) txt.textContent = 'ERROR';
-    if (mTxt) mTxt.textContent = 'ERROR';
+    dot.classList.add('error');
+    txt.textContent = 'ERROR';
   } else {
-    if (txt) txt.textContent = 'DISCONNECTED';
-    if (mTxt) mTxt.textContent = 'DISCONNECTED';
-    if (dBtn) { dBtn.textContent = 'CONNECT'; dBtn.classList.remove('stop'); }
-    if (mBtn) { mBtn.textContent = 'CONNECT'; mBtn.classList.remove('stop'); }
+    txt.textContent = 'DISCONNECTED';
+    if (mobileBtn) { mobileBtn.textContent = 'CONNECT'; mobileBtn.classList.remove('stop'); }
   }
 }
 
@@ -569,11 +571,7 @@ updateClock();
 setInterval(updateClock, 1000);
 
 // ── Auto-connect on page load ──────────────────────────────────────────────
-window.addEventListener('load', () => {
-  // Force Leaflet to recalculate map size (fixes Safari blank map)
-  setTimeout(() => map.invalidateSize(), 100);
-  connect();
-});
+window.addEventListener('load', () => connect());
 
 // ── Stale Vessel Cleanup ───────────────────────────────────────────────────
 // Remove vessels not seen in the last 30 minutes (moored ships ping infrequently)

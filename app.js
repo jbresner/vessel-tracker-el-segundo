@@ -570,7 +570,11 @@ updateClock();
 setInterval(updateClock, 1000);
 
 // ── Auto-connect on page load ──────────────────────────────────────────────
-window.addEventListener('load', () => connect());
+window.addEventListener('load', () => {
+  // Force Leaflet to recalculate map size (fixes Safari blank map)
+  setTimeout(() => map.invalidateSize(), 100);
+  connect();
+});
 
 // ── Stale Vessel Cleanup ───────────────────────────────────────────────────
 // Remove vessels not seen in the last 30 minutes (moored ships ping infrequently)

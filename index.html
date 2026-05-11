@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Segundo Terminal — Vessel Tracker</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- App styles -->
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <header>
+    <div class="logo">EL SEGUNDO <span>//</span> VESSEL TRACKER</div>
+    <div class="status-bar">
+      <span><span class="status-dot" id="statusDot"></span><span id="statusText">DISCONNECTED</span></span>
+      <span id="vesselCount">0 VESSELS</span>
+      <span id="clockEl"></span>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+      <div class="api-section">
+        <div class="section-label">AISStream API Key</div>
+        <div class="api-input-row">
+          <input type="password" id="apiKeyInput" placeholder="Paste your key here…" />
+          <button id="connectBtn" onclick="toggleConnection()">CONNECT</button>
+        </div>
+        <div class="radius-row">
+          <label>RADIUS</label>
+          <input type="range" id="radiusSlider" min="1" max="20" value="5" oninput="updateRadius(this.value)"/>
+          <span class="radius-val" id="radiusVal">5 nm</span>
+        </div>
+      </div>
+
+      <div class="list-header">
+        <span>VESSELS IN RANGE</span>
+        <span id="listCount">0</span>
+      </div>
+
+      <div class="vessel-list" id="vesselList">
+        <div class="no-vessels">Enter your API key<br>and connect to begin<br>tracking vessels</div>
+      </div>
+    </div>
+
+    <!-- MAP -->
+    <div id="map"></div>
+
+    <!-- RIGHT DETAIL PANEL -->
+    <div class="detail-panel">
+      <div class="detail-header">VESSEL DETAIL</div>
+      <div class="detail-body" id="detailBody">
+        <div class="detail-empty">Select a vessel<br>to view details</div>
+      </div>
+      <div class="log-section" id="logSection">
+        <div class="section-label" style="padding:4px 0 6px">ACTIVITY LOG</div>
+        <div id="logEntries"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- App logic -->
+  <script src="app.js"></script>
+
+</body>
+</html>

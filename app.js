@@ -65,9 +65,12 @@ function navStatusLabel(s) {
 }
 
 // ── Map Setup ──────────────────────────────────────────────────────────────
-const map = L.map('map', { zoomControl: true }).setView([TARGET.lat, TARGET.lng], 13);
+// ── Map Setup ──────────────────────────────────────────────────────────────
+const isMobile = () => window.innerWidth <= 768;
+const mapId    = isMobile() ? 'mobileMap' : 'map';
+const map      = L.map(mapId, { zoomControl: true }).setView([TARGET.lat, TARGET.lng], 13);
 
-// Primary: CARTO dark tiles; fallback keeps working if CARTO is slow
+// Primary: CARTO dark tiles
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
@@ -119,7 +122,10 @@ drawRadius();
 
 function updateRadius(val) {
   radiusNm = parseInt(val);
-  document.getElementById('radiusVal').textContent = `${radiusNm} nm`;
+  const label = `${radiusNm} nm`;
+  document.getElementById('radiusVal').textContent  = label;
+  const mRV = document.getElementById('mRadiusVal');
+  if (mRV) mRV.textContent = label;
   drawRadius();
   if (ws && ws.readyState === WebSocket.OPEN) reconnect();
 }
@@ -212,11 +218,9 @@ function connect() {
   ws.onclose = () => {
     if (document.getElementById('statusText').textContent === 'LIVE') {
       setStatus('disconnected');
+    } else {
+      setStatus('disconnected');
     }
-    document.getElementById('connectBtn').textContent = 'CONNECT';
-    document.getElementById('connectBtn').classList.remove('stop');
-    const mobileBtn = document.getElementById('mobileConnectBtn');
-    if (mobileBtn) { mobileBtn.textContent = 'CONNECT'; mobileBtn.classList.remove('stop'); }
   };
 }
 
@@ -343,51 +347,50 @@ function updateMarker(mmsi) {
 // ── Mobile Sheet ───────────────────────────────────────────────────────────
 const isMobile = () => window.innerWidth <= 768;
 
-function expandSheet() {
-  const sheet = document.getElementById('sheet');
-  if (!sheet.classList.contains('expanded') && !sheet.classList.contains('full')) {
-    sheet.classList.add('expanded');
+function toggleSheet() {
+  const sheet = document.getElementById('mSheet');
+  if (!sheet) return;
+  if (sheet.classList.contains('full')) {
+    sheet.classList.remove('full');
+  } else if (sheet.classList.contains('open')) {
+    sheet.classList.add('full');
+  } else {
+    sheet.classList.add('open');
   }
+}
+
+function openSheet() {
+  const sheet = document.getElementById('mSheet');
+  if (sheet && !sheet.classList.contains('open')) sheet.classList.add('open');
 }
 
 function showMobileList() {
-  document.getElementById('sheetListView').style.display = 'flex';
-  document.getElementById('sheetDetailView').style.display = 'none';
+  const lv = document.getElementById('mListView');
+  const dv = document.getElementById('mDetailView');
+  if (lv) lv.style.display = 'flex';
+  if (dv) dv.style.display = 'none';
 }
 
 function showMobileDetail() {
-  document.getElementById('sheetListView').style.display = 'none';
-  document.getElementById('sheetDetailView').style.display = 'flex';
-  expandSheet();
+  const lv = document.getElementById('mListView');
+  const dv = document.getElementById('mDetailView');
+  if (lv) lv.style.display = 'none';
+  if (dv) dv.style.display = 'flex';
+  openSheet();
 }
 
-// Sheet handle tap cycles: peek → expanded → full → peek
-document.getElementById('sheetHandle').addEventListener('click', () => {
-  const sheet = document.getElementById('sheet');
-  if (sheet.classList.contains('full')) {
-    sheet.classList.remove('full');
-    sheet.classList.remove('expanded');
-  } else if (sheet.classList.contains('expanded')) {
-    sheet.classList.add('full');
-  } else {
-    sheet.classList.add('expanded');
-  }
-});
-
-function vesselItemHTML(v, isMobileList) {
+function vesselItemHTML(v, onClickFn) {
   const cat   = v.category || 'other';
   const badge = cat === 'tanker' ? 'badge-tanker' : cat === 'cargo' ? 'badge-cargo' : 'badge-other';
   const label = shipTypeLabel(v.shipType || 0);
   const sog   = v.sog != null ? `${v.sog.toFixed(1)}kn` : '—';
   const sel   = v.mmsi === selectedMmsi ? ' selected' : '';
-  const dest  = v.destination ? `<span title="${v.destination}">${v.destination.substring(0, 10)}</span>` : '';
-  const fn    = isMobileList ? `selectVesselMobile('${v.mmsi}')` : `selectVessel('${v.mmsi}')`;
-  return `<div class="vessel-item ${cat}${sel}" onclick="${fn}">
+  const dest  = v.destination ? `<span title="${v.destination}">${v.destination.substring(0,10)}</span>` : '';
+  return `<div class="vessel-item ${cat}${sel}" onclick="${onClickFn}('${v.mmsi}')">
     <div class="vessel-name">${v.name}</div>
     <div class="vessel-meta">
       <span class="vessel-type-badge ${badge}">${label}</span>
-      <span>${sog}</span>
-      ${dest}
+      <span>${sog}</span>${dest}
     </div>
   </div>`;
 }
@@ -395,14 +398,12 @@ function vesselItemHTML(v, isMobileList) {
 function selectVesselMobile(mmsi) {
   selectedMmsi = mmsi;
   updateList();
+  showDetail(mmsi);
+  const mBody = document.getElementById('mDetailBody');
+  const dBody = document.getElementById('detailBody');
+  if (mBody && dBody) mBody.innerHTML = dBody.innerHTML;
   showMobileDetail();
   const v = vessels[mmsi];
-  const mobileBody = document.getElementById('mobileDetailBody');
-  if (v) {
-    const desktopBody = document.getElementById('detailBody');
-    showDetail(mmsi); // populates desktopBody
-    mobileBody.innerHTML = desktopBody.innerHTML;
-  }
   if (v && v.lat) map.panTo([v.lat, v.lng]);
 }
 
@@ -410,27 +411,25 @@ function selectVesselMobile(mmsi) {
 function updateList() {
   const arr = Object.values(vessels)
     .filter(v => v.lat)
-    .sort((a, b) => {
-      const order = ['tanker', 'cargo', 'passenger', 'fishing', 'tug', 'other'];
-      return order.indexOf(a.category || 'other') - order.indexOf(b.category || 'other');
+    .sort((a,b) => {
+      const order = ['tanker','cargo','passenger','fishing','tug','other'];
+      return order.indexOf(a.category||'other') - order.indexOf(b.category||'other');
     });
 
-  const count = arr.length;
-  document.getElementById('listCount').textContent      = count;
-  document.getElementById('sheetListCount').textContent = count;
-  document.getElementById('vesselCount').textContent    = `${count} VESSEL${count !== 1 ? 'S' : ''}`;
-
+  const count     = arr.length;
+  const countText = `${count} VESSEL${count !== 1 ? 'S' : ''}`;
   const emptyHTML = '<div class="no-vessels">Listening for vessels…<br>May take a moment<br>for traffic to appear</div>';
 
-  // Desktop list
-  const list = document.getElementById('vesselList');
-  list.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, false)).join('');
+  ['listCount','mListCount'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = count; });
+  ['vesselCount','mVesselCount'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = countText; });
 
-  // Mobile list
-  const mobileList = document.getElementById('mobileVesselList');
-  if (mobileList) {
-    mobileList.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, true)).join('');
-    if (count > 0) expandSheet();
+  const dList = document.getElementById('vesselList');
+  if (dList) dList.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, 'selectVessel')).join('');
+
+  const mList = document.getElementById('mVesselList');
+  if (mList) {
+    mList.innerHTML = count === 0 ? emptyHTML : arr.map(v => vesselItemHTML(v, 'selectVesselMobile')).join('');
+    if (count > 0 && isMobile()) openSheet();
   }
 }
 
@@ -515,45 +514,45 @@ function showDetail(mmsi) {
 
 // ── Activity Log ───────────────────────────────────────────────────────────
 function addLog(msg, highlight) {
-  const time = new Date().toLocaleTimeString('en-US', {
-    hour:   '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  });
+  const time = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false });
   logEntries.unshift({ time, msg, highlight });
   if (logEntries.length > 50) logEntries.pop();
-
-  const html = logEntries
-    .map(e => `<div class="log-entry${e.highlight ? ' highlight' : ''}">
-      <span class="log-time">${e.time}</span>${e.msg}
-    </div>`)
-    .join('');
-
-  document.getElementById('logEntries').innerHTML = html;
-  const mobileLog = document.getElementById('mobileLogEntries');
-  if (mobileLog) mobileLog.innerHTML = html;
+  const html = logEntries.map(e =>
+    `<div class="log-entry${e.highlight?' highlight':''}"><span class="log-time">${e.time}</span>${e.msg}</div>`
+  ).join('');
+  ['logEntries','mLogEntries'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
 }
 
 // ── Status Indicator ───────────────────────────────────────────────────────
 function setStatus(state) {
-  const dot      = document.getElementById('statusDot');
-  const txt      = document.getElementById('statusText');
-  const mobileBtn = document.getElementById('mobileConnectBtn');
-  dot.className  = 'status-dot';
+  const dot  = document.getElementById('statusDot');
+  const txt  = document.getElementById('statusText');
+  const mDot = document.getElementById('mStatusDot');
+  const mTxt = document.getElementById('mStatusText');
+  const mBtn = document.getElementById('mConnectBtn');
+  const dBtn = document.getElementById('connectBtn');
+
+  if (dot) dot.className = 'status-dot';
+  if (mDot) mDot.className = 'status-dot';
 
   if (state === 'live') {
-    dot.classList.add('live');
-    txt.textContent = 'LIVE';
-    if (mobileBtn) { mobileBtn.textContent = 'STOP'; mobileBtn.classList.add('stop'); }
+    [dot, mDot].forEach(d => d && d.classList.add('live'));
+    if (txt) txt.textContent = 'LIVE';
+    if (mTxt) mTxt.textContent = 'LIVE';
+    if (dBtn) { dBtn.textContent = 'STOP'; dBtn.classList.add('stop'); }
+    if (mBtn) { mBtn.textContent = 'STOP'; mBtn.classList.add('stop'); }
   } else if (state === 'connecting') {
-    txt.textContent = 'CONNECTING…';
+    if (txt) txt.textContent = 'CONNECTING…';
+    if (mTxt) mTxt.textContent = 'CONNECTING…';
   } else if (state === 'error') {
-    dot.classList.add('error');
-    txt.textContent = 'ERROR';
+    [dot, mDot].forEach(d => d && d.classList.add('error'));
+    if (txt) txt.textContent = 'ERROR';
+    if (mTxt) mTxt.textContent = 'ERROR';
   } else {
-    txt.textContent = 'DISCONNECTED';
-    if (mobileBtn) { mobileBtn.textContent = 'CONNECT'; mobileBtn.classList.remove('stop'); }
+    if (txt) txt.textContent = 'DISCONNECTED';
+    if (mTxt) mTxt.textContent = 'DISCONNECTED';
+    if (dBtn) { dBtn.textContent = 'CONNECT'; dBtn.classList.remove('stop'); }
+    if (mBtn) { mBtn.textContent = 'CONNECT'; mBtn.classList.remove('stop'); }
   }
 }
 

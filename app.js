@@ -184,13 +184,14 @@ function connect() {
     addLog('Connected to AISStream', false);
   };
 
-  ws.onmessage = (evt) => {
+  ws.onmessage = async (evt) => {
     try {
-      const msg = JSON.parse(evt.data);
+      const text = evt.data instanceof Blob ? await evt.data.text() : evt.data;
+      const msg = JSON.parse(text);
       console.log('[AIS] Message received:', msg.MessageType, msg.MetaData?.ShipName, msg.MetaData?.MMSI);
       handleMessage(msg);
     } catch (e) {
-      console.error('Parse error:', e);
+      console.error('Parse error:', e, evt.data);
     }
   };
 

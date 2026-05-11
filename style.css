@@ -60,14 +60,14 @@ header {
   gap: 20px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
-  color: var(--muted);
+  color: var(--other);
 }
 
 .status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--muted);
+  background: var(--other);
   display: inline-block;
   margin-right: 5px;
 }
@@ -226,7 +226,7 @@ input[type="range"] {
 .no-vessels {
   text-align: center;
   padding: 30px 16px;
-  color: var(--muted);
+  color: var(--other);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -265,7 +265,7 @@ input[type="range"] {
   border-bottom: 1px solid var(--border);
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--other);
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -277,7 +277,7 @@ input[type="range"] {
 }
 
 .detail-empty {
-  color: var(--muted);
+  color: var(--other);
   font-size: 12px;
   text-align: center;
   margin-top: 40px;
@@ -325,7 +325,7 @@ input[type="range"] {
 .log-entry {
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--other);
   padding: 3px 0;
   border-bottom: 1px solid rgba(30,45,64,0.5);
 }

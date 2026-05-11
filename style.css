@@ -340,20 +340,19 @@ input[type="range"] {
   .hide-mobile { display: none; }
 }
 
-/* Mobile floating controls (top-left over map) */
+/* Mobile floating controls — hidden by default, shown on mobile via media query */
 .mobile-controls {
-  display: none;
   position: fixed;
   top: 58px;
   left: 10px;
   z-index: 1200;
-  display: flex;
   align-items: center;
   gap: 6px;
   background: rgba(15,21,32,0.92);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px 10px;
+  display: none;
 }
 
 .mobile-btn {

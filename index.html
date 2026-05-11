@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>El Segundo Terminal — Vessel Tracker</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -17,16 +17,13 @@
     <div class="status-bar">
       <span><span class="status-dot" id="statusDot"></span><span id="statusText">DISCONNECTED</span></span>
       <span id="vesselCount">0 VESSELS</span>
-      <span id="clockEl" class="hide-mobile"></span>
-      <span style="color:var(--other)">v2.0</span>
+      <span id="clockEl"></span>
+      <span style="color:var(--other)">v2.1</span>
     </div>
   </header>
 
-  <!-- SINGLE MAIN — map always present, panels shown/hidden by CSS -->
   <div class="main">
-
-    <!-- LEFT SIDEBAR -->
-    <div class="sidebar" id="sidebar">
+    <div class="sidebar">
       <div class="api-section">
         <div class="controls-row">
           <button id="connectBtn" onclick="toggleConnection()">CONNECT</button>
@@ -47,11 +44,9 @@
       </div>
     </div>
 
-    <!-- MAP — always in DOM, always visible -->
     <div id="map"></div>
 
-    <!-- RIGHT DETAIL PANEL -->
-    <div class="detail-panel" id="detailPanel">
+    <div class="detail-panel">
       <div class="detail-header">VESSEL DETAIL</div>
       <div class="detail-body" id="detailBody">
         <div class="detail-empty">Select a vessel<br>to view details</div>
@@ -60,53 +55,6 @@
         <div class="section-label" style="padding:4px 0 6px">ACTIVITY LOG</div>
         <div id="logEntries"></div>
       </div>
-    </div>
-
-  </div>
-
-  <!-- MOBILE FLOATING CONTROLS (hidden on desktop) -->
-  <div class="m-topbar" id="mTopbar">
-    <div class="m-status">
-      <span class="status-dot" id="mStatusDot"></span>
-      <span id="mStatusText">DISCONNECTED</span>
-    </div>
-    <div class="m-controls">
-      <button class="m-btn" id="mConnectBtn" onclick="toggleConnection()">CONNECT</button>
-      <button class="m-btn secondary" onclick="reconnect()">↺</button>
-    </div>
-    <div class="m-radius">
-      <input type="range" id="mRadiusSlider" min="1" max="20" value="5"
-        oninput="updateRadius(this.value)"/>
-      <span id="mRadiusVal">5nm</span>
-    </div>
-  </div>
-
-  <!-- MOBILE SLIDE-UP SHEET (hidden on desktop) -->
-  <div class="m-sheet" id="mSheet">
-    <div class="m-sheet-bar" onclick="toggleSheet()"></div>
-
-    <!-- List view -->
-    <div id="mListView">
-      <div class="m-sheet-title">
-        <span>VESSELS IN RANGE</span>
-        <span id="mListCount">0</span>
-      </div>
-      <div class="vessel-list" id="mVesselList">
-        <div class="no-vessels">Connecting…</div>
-      </div>
-      <div class="m-log">
-        <div class="section-label" style="padding:4px 0 6px">ACTIVITY LOG</div>
-        <div id="mLogEntries"></div>
-      </div>
-    </div>
-
-    <!-- Detail view -->
-    <div id="mDetailView" style="display:none">
-      <div class="m-sheet-title">
-        <button class="m-back" onclick="showMobileList()">← BACK</button>
-        <span>VESSEL DETAIL</span>
-      </div>
-      <div class="detail-body" id="mDetailBody"></div>
     </div>
   </div>
 

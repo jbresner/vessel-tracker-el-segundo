@@ -417,31 +417,40 @@ input[type="range"] {
     left: 0;
     right: 0;
     bottom: 0;
-    height: 60px; /* peek height */
+    height: 52px;
     background: var(--panel);
     border-top: 1px solid var(--border);
     border-radius: 16px 16px 0 0;
     z-index: 1100;
-    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+    touch-action: none;
   }
-
-  .sheet.expanded {
-    height: 55vh;
+  .sheet.dragging {
+    transition: none;
   }
-
-  .sheet.full {
-    height: 85vh;
-  }
+  .sheet.peek     { height: 52px; }
+  .sheet.half     { height: 50vh; }
+  .sheet.full     { height: 88vh; }
 
   .sheet-handle {
-    width: 36px;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 10px auto 6px;
+    width: 100%;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    cursor: pointer;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .sheet-handle::after {
+    content: '';
+    width: 40px;
+    height: 4px;
+    background: var(--other);
+    border-radius: 2px;
+    display: block;
   }
 
   .sheet-view {

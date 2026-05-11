@@ -25,7 +25,7 @@
       <span><span class="status-dot" id="statusDot"></span><span id="statusText">DISCONNECTED</span></span>
       <span id="vesselCount">0 VESSELS</span>
       <span id="clockEl" class="hide-mobile"></span>
-      <span style="color:var(--other)">v2.1</span>
+      <span style="color:var(--other)">v2.3</span>
     </div>
   </header>
 
@@ -68,6 +68,7 @@
       <div class="log-section" id="logSection">
         <div class="section-label" style="padding:4px 0 6px">ACTIVITY LOG</div>
         <div id="logEntries"></div>
+        <button class="secondary" style="width:100%;margin-top:8px" onclick="downloadCSV()">↓ EXPORT CSV</button>
       </div>
     </div>
 
@@ -100,6 +101,7 @@
       <div class="sheet-log">
         <div class="section-label" style="padding:4px 0 6px">ACTIVITY LOG</div>
         <div id="mobileLogEntries"></div>
+        <button class="secondary" style="width:100%;margin-top:8px" onclick="downloadCSV()">↓ EXPORT CSV</button>
       </div>
     </div>
 

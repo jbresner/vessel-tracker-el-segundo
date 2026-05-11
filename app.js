@@ -143,6 +143,7 @@ let vessels      = {};        // mmsi → vessel data object
 let markers      = {};        // mmsi → Leaflet marker
 let selectedMmsi = null;      // currently selected vessel
 let logEntries   = [];        // activity log entries
+let visitHistory = [];        // persistent vessel visit log for CSV export
 
 // ── WebSocket Connection ───────────────────────────────────────────────────
 function toggleConnection() {
@@ -283,8 +284,10 @@ function handleMessage(msg) {
 
     if (wasNew && cat === 'tanker') {
       addLog(`TANKER: ${name} (MMSI ${mmsi})`, true);
+      logVisit(vessels[mmsi]);
     } else if (wasNew) {
       addLog(`New vessel: ${name}`, false);
+      logVisit(vessels[mmsi]);
     }
 
     updateMarker(mmsi);
@@ -343,12 +346,70 @@ function updateMarker(mmsi) {
 // ── Mobile Sheet ───────────────────────────────────────────────────────────
 const isMobile = () => window.innerWidth <= 768;
 
-function expandSheet() {
+const SNAP_PEEK = 52;
+const SNAP_HALF = Math.round(window.innerHeight * 0.50);
+const SNAP_FULL = Math.round(window.innerHeight * 0.88);
+
+function snapSheet(targetH, animate = true) {
   const sheet = document.getElementById('sheet');
-  if (!sheet.classList.contains('expanded') && !sheet.classList.contains('full')) {
-    sheet.classList.add('expanded');
-  }
+  if (!sheet) return;
+  if (animate) sheet.classList.remove('dragging');
+  else         sheet.classList.add('dragging');
+  sheet.style.height = targetH + 'px';
 }
+
+function expandSheet() {
+  snapSheet(SNAP_HALF);
+}
+
+// Drag-to-snap logic on the handle
+window.addEventListener('load', () => {
+  const handle = document.getElementById('sheetHandle');
+  const sheet  = document.getElementById('sheet');
+  if (!handle || !sheet) return;
+
+  let startY      = 0;
+  let startH      = 0;
+  let dragging    = false;
+
+  function onStart(e) {
+    startY   = e.touches ? e.touches[0].clientY : e.clientY;
+    startH   = sheet.offsetHeight;
+    dragging = true;
+    sheet.classList.add('dragging');
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    const y      = e.touches ? e.touches[0].clientY : e.clientY;
+    const delta  = startY - y;
+    const newH   = Math.max(SNAP_PEEK, Math.min(SNAP_FULL, startH + delta));
+    sheet.style.height = newH + 'px';
+    e.preventDefault();
+  }
+
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false;
+    const currentH = sheet.offsetHeight;
+    // Snap to nearest position
+    const distances = [
+      { h: SNAP_PEEK, d: Math.abs(currentH - SNAP_PEEK) },
+      { h: SNAP_HALF, d: Math.abs(currentH - SNAP_HALF) },
+      { h: SNAP_FULL, d: Math.abs(currentH - SNAP_FULL) },
+    ];
+    const snap = distances.reduce((a, b) => a.d < b.d ? a : b);
+    snapSheet(snap.h, true);
+  }
+
+  handle.addEventListener('touchstart', onStart, { passive: false });
+  handle.addEventListener('touchmove',  onMove,  { passive: false });
+  handle.addEventListener('touchend',   onEnd);
+  handle.addEventListener('mousedown',  onStart);
+  window.addEventListener('mousemove',  onMove);
+  window.addEventListener('mouseup',    onEnd);
+});
 
 function showMobileList() {
   document.getElementById('sheetListView').style.display = 'flex';
@@ -358,21 +419,8 @@ function showMobileList() {
 function showMobileDetail() {
   document.getElementById('sheetListView').style.display = 'none';
   document.getElementById('sheetDetailView').style.display = 'flex';
-  expandSheet();
+  snapSheet(SNAP_HALF);
 }
-
-// Sheet handle tap cycles: peek → expanded → full → peek
-document.getElementById('sheetHandle').addEventListener('click', () => {
-  const sheet = document.getElementById('sheet');
-  if (sheet.classList.contains('full')) {
-    sheet.classList.remove('full');
-    sheet.classList.remove('expanded');
-  } else if (sheet.classList.contains('expanded')) {
-    sheet.classList.add('full');
-  } else {
-    sheet.classList.add('expanded');
-  }
-});
 
 function vesselItemHTML(v, isMobileList) {
   const cat   = v.category || 'other';
@@ -555,6 +603,46 @@ function setStatus(state) {
     txt.textContent = 'DISCONNECTED';
     if (mobileBtn) { mobileBtn.textContent = 'CONNECT'; mobileBtn.classList.remove('stop'); }
   }
+}
+
+// ── Vessel Visit History ───────────────────────────────────────────────────
+function logVisit(v) {
+  visitHistory.push({
+    timestamp:   new Date().toISOString(),
+    name:        v.name || '',
+    mmsi:        v.mmsi || '',
+    imo:         v.imo || '',
+    type:        shipTypeLabel(v.shipType || 0),
+    category:    v.category || '',
+    flag:        v.flag || '',
+    callsign:    v.callsign || '',
+    destination: v.destination || '',
+    speed:       v.sog != null ? v.sog.toFixed(1) : '',
+    navStatus:   v.navStatus != null ? navStatusLabel(v.navStatus) : '',
+    lat:         v.lat != null ? v.lat.toFixed(6) : '',
+    lng:         v.lng != null ? v.lng.toFixed(6) : '',
+  });
+}
+
+function downloadCSV() {
+  if (visitHistory.length === 0) {
+    alert('No vessel history to export yet.');
+    return;
+  }
+  const headers = ['Timestamp','Name','MMSI','IMO','Type','Category','Flag','Callsign','Destination','Speed (kn)','Nav Status','Latitude','Longitude'];
+  const rows = visitHistory.map(r => [
+    r.timestamp, r.name, r.mmsi, r.imo, r.type, r.category,
+    r.flag, r.callsign, r.destination, r.speed, r.navStatus, r.lat, r.lng
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+
+  const csv  = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `vessel-history-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── Clock ──────────────────────────────────────────────────────────────────

@@ -166,6 +166,7 @@ function connect() {
 
   setStatus('connecting');
   const bbox = getBBox();
+  console.log('[AIS] Connecting with bounding box:', JSON.stringify(bbox));
 
   ws = new WebSocket('wss://stream.aisstream.io/v0/stream');
 
@@ -176,6 +177,7 @@ function connect() {
       FilterMessageTypes: ['PositionReport', 'ShipStaticData'],
     };
     ws.send(JSON.stringify(sub));
+    console.log('[AIS] Subscribed:', JSON.stringify(sub));
     setStatus('live');
     document.getElementById('connectBtn').textContent = 'STOP';
     document.getElementById('connectBtn').classList.add('stop');
@@ -184,13 +186,16 @@ function connect() {
 
   ws.onmessage = (evt) => {
     try {
-      handleMessage(JSON.parse(evt.data));
+      const msg = JSON.parse(evt.data);
+      console.log('[AIS] Message received:', msg.MessageType, msg.MetaData?.ShipName, msg.MetaData?.MMSI);
+      handleMessage(msg);
     } catch (e) {
       console.error('Parse error:', e);
     }
   };
 
-  ws.onerror = () => {
+  ws.onerror = (e) => {
+    console.error('[AIS] WebSocket error:', e);
     setStatus('error');
     addLog('Connection error', true);
   };

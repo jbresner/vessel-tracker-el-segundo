@@ -344,6 +344,7 @@ input[type="range"] {
 @media (max-width: 768px) {
   header {
     padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top));
   }
   .hide-mobile { display: none; }
   .logo { font-size: 11px; letter-spacing: 1px; }

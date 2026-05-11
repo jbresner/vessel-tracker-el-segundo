@@ -186,12 +186,19 @@ function connect() {
 
   ws.onmessage = async (evt) => {
     try {
-      const text = evt.data instanceof Blob ? await evt.data.text() : evt.data;
+      let text;
+      if (evt.data instanceof Blob) {
+        text = await evt.data.text();
+      } else {
+        text = evt.data;
+      }
+      console.log('[AIS] Raw data type:', typeof evt.data, evt.data instanceof Blob ? 'Blob' : 'not Blob');
+      console.log('[AIS] Raw text:', text.substring(0, 200));
       const msg = JSON.parse(text);
       console.log('[AIS] Message received:', msg.MessageType, msg.MetaData?.ShipName, msg.MetaData?.MMSI);
       handleMessage(msg);
     } catch (e) {
-      console.error('Parse error:', e, evt.data);
+      console.error('Parse error:', e, typeof evt.data);
     }
   };
 

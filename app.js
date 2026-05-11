@@ -1,9 +1,7 @@
 // ── Constants ──────────────────────────────────────────────────────────────
-// Berth positions calculated from official records:
-// Berth 3 ≈ 7,200ft (1.19nm) offshore; Berth 4 ≈ 8,100ft (1.34nm) offshore
-// Projected due west from the El Segundo shoreline (~33.9165°N, 118.4175°W)
-const BERTH3 = { lat: 33.9165, lng: -118.4540, name: "Chevron Berth 3 (CBM)" };
-const BERTH4 = { lat: 33.9165, lng: -118.4620, name: "Chevron Berth 4 (CBM)" };
+// Berth coordinates derived from actual vessel positions observed at the terminal
+const BERTH3 = { lat: 33.9116, lng: -118.4533, name: "Chevron Berth 3 (CBM)" };
+const BERTH4 = { lat: 33.9041, lng: -118.4521, name: "Chevron Berth 4 (CBM)" };
 
 // Center point between the two berths — used for radius circle and bounding box
 const TARGET = {
@@ -69,8 +67,10 @@ function navStatusLabel(s) {
 // ── Map Setup ──────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl: true }).setView([TARGET.lat, TARGET.lng], 13);
 
+// Primary: CARTO dark tiles; fallback keeps working if CARTO is slow
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CARTO',
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
   maxZoom: 19,
 }).addTo(map);
 
@@ -485,10 +485,10 @@ setInterval(updateClock, 1000);
 window.addEventListener('load', () => connect());
 
 // ── Stale Vessel Cleanup ───────────────────────────────────────────────────
-// Remove vessels not seen in the last 10 minutes
+// Remove vessels not seen in the last 30 minutes (moored ships ping infrequently)
 setInterval(() => {
   const now    = new Date();
-  const cutoff = 10 * 60 * 1000;
+  const cutoff = 30 * 60 * 1000;
   Object.keys(vessels).forEach(mmsi => {
     const v = vessels[mmsi];
     if (v.lastSeen && (now - v.lastSeen) > cutoff) {
